@@ -3,6 +3,7 @@ var connect = require('connect');
 var events  = require('events');
 var util    = require('util');
 var url     = require('url');
+var bodyParser     = require('body-parser');
 // Internal dependencies
 var SubscriptionManager = require('./SubscriptionManager.js');
 var MediaFetcher        = require('./MediaFetcher.js');
@@ -82,7 +83,7 @@ function InstagramStream (server, opts) {
 
     var chain = connect();
 
-    chain.use(connect.bodyParser());
+    chain.use(bodyParser.urlencoded({ extended: true }));
 
     chain.use(function (req, resp, next) {
       var pathname = url.parse(req.url).pathname;
