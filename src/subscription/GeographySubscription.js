@@ -29,6 +29,16 @@ class GeographySubscription extends Subscription {
         this.data.lat = lat;
         this.data.rad = rad;
     }
+
+
+    static isForThis(term) {
+        return typeof term.lat === 'number' && typeof term.lng === 'number' && typeof term.radius === 'number';
+    }
+
+    static create(term) {
+        return new GeographySubscription({'lat':term.lat, 'lng': term.lng, 'rad': term.rad});
+    }
+
 }
 
 module.exports = GeographySubscription;

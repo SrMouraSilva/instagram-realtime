@@ -23,6 +23,13 @@ class SubscriptionManager {
             'secret' : params.client_secret,
             'callback_url' : params.callback_url,
         };
+
+        this.subscribers = [
+            UserSubscription,
+            TagSubscription,
+            GeographySubscription,
+            LocationSubscription
+        ];
     }
 
     /**
@@ -51,36 +58,15 @@ class SubscriptionManager {
             this.parent.emit('unsubscribe/error', error, resp, body);
     }
 
-    /**
-     * @param {string} tag String hastag
-     */
-    subscribe_tag(tag) {
-        this.subscribe(new TagSubscription({'object_id':tag}));
+    subscribe(term) {
+        for (let subscriber of this.subscribers)
+            if (subscriber.isForThis(term)) {
+                this._subscribe(subscriber.create(term));
+                break;
+            }
     }
 
-    subscribe_user() {
-        this.subscribe(new UserSubscription());
-    }
-
-    /**
-     * @param {string} id an identification string for a particular location
-     */
-    subscribe_location(id) {
-        this.subscribe(new LocationSubscription({'id':id}));
-    }
-
-    /**
-     * @param {string} lat latitude coordinate
-     * @param {string} lng longitude coordinate
-     * @param {string} rad the radius
-     */
-    subscribe_geography(lat, lng, rad) {
-        this.subscribe(
-            new GeographySubscription({'lat':lat, 'lng': lng, 'rad': rad})
-        );
-    }
-
-    subscribe(subscription) {
+    _subscribe(subscription) {
         let data = subscription.data;
 
         data.client_id     = this.client.id;

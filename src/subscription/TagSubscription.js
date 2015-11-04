@@ -21,6 +21,14 @@ class TagSubscription extends Subscription {
         this.data.aspect = 'media';
         this.data.object_id = data.object_id;
     }
+
+    static isForThis(term) {
+        return typeof term.tag === 'string' && term.tag !== '';
+    }
+
+    static create(term) {
+        return new TagSubscription({'object_id':term.tag});
+    }
 }
 
 module.exports = TagSubscription;

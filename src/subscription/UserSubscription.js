@@ -15,6 +15,14 @@ class UserSubscription extends Subscription {
         this.data.object = 'user';
         this.data.aspect = 'media';
     }
+
+    static isForThis(term) {
+        return typeof term.user !== 'undefined' && term.user;
+    }
+
+    static create(term) {
+        return new UserSubscription();
+    }
 }
 
 module.exports = UserSubscription;

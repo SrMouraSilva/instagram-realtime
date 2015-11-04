@@ -20,6 +20,14 @@ class LocationSubscription extends Subscription {
         this.data.aspect = 'media';
         this.data.object_id = data.id;
     }
+
+    static isForThis(term) {
+        return (typeof term.location === 'number' || typeof term.location === 'string') && term.location !== '';
+    }
+
+    static create(term) {
+        return new LocationSubscription({'id':term.location});
+    }
 }
 
 module.exports = LocationSubscription;

@@ -34,18 +34,17 @@ function InstagramStream (server, opts) {
   opts = opts || {};
 
   // Warn user about invalid options
-  if (!opts.client_id) {
+  if (!opts.client_id)
     console.log('Invalid "client_id"'.yellow);
-  }
-  if (!opts.client_secret) {
+
+  if (!opts.client_secret)
     console.log('Invalid "client_secret"'.yellow);
-  }
-  if (!opts.url) {
+
+  if (!opts.url)
     console.log('Invalid "url"'.yellow);
-  }
-  if (!opts.callback_path) {
+
+  if (!opts.callback_path)
     console.log('Invalid "callback_path"'.yellow);
-  }
 
   // Create object
   this.client_id      = opts.client_id;
@@ -78,7 +77,7 @@ function InstagramStream (server, opts) {
   });
 
   // Route '/:callback' -> custom handlers
-  ~function () {
+  ~function() {
     var listeners = server.listeners('request');
 
     var chain = connect();
@@ -87,22 +86,24 @@ function InstagramStream (server, opts) {
 
     chain.use(function (req, resp, next) {
       var pathname = url.parse(req.url).pathname;
+
       if (req.method === 'GET' && pathname === '/' + self.callback_path) {
         var hub_challenge = url.parse(req.url, true).query['hub.challenge'];
         resp.writeHead(200, { 'Content-Type': 'text/plain;charset=utf-8' });
         resp.end(hub_challenge ? hub_challenge : '🍕');
-      }
-      else if (req.method === 'POST' && pathname === '/' + self.callback_path) {
+
+      } else if (req.method === 'POST' && pathname === '/' + self.callback_path) {
+          console.log("Instagram: POST");
+          console.log(req.body);
         resp.writeHead(200, { 'Content-Type': 'text/plain;charset=utf-8' });
         resp.end('🍕');
         route_traffic(req.body, req);
-      }
-      else {
+
+      } else
         next();
-      }
     });
 
-    chain.use(function (req, resp) {
+    chain.use(function(req, resp) {
       for (var k = 0; k < listeners.length; k++) {
         listeners[k].call(server, req, resp);
       }
@@ -112,26 +113,11 @@ function InstagramStream (server, opts) {
     server.on('request', chain);
   }();
 
-  this.subscribe = function (term) {
-    // Contains subscription to users
-    if (typeof term.user !== 'undefined' && term.user) {
-      _sub.subscribe_user();
-    }
-    // Contains subscription to tag
-    if (typeof term.tag === 'string' && term.tag !== '') {
-      _sub.subscribe_tag(term.tag);
-    }
-    // Contains subscription to location-id
-    if ((typeof term.location === 'number' || typeof term.location === 'string') && term.location !== '') {
-      _sub.subscribe_location(term.location);
-    }
-    // Contains subscription to geography coordinates
-    if (typeof term.lat === 'number' && typeof term.lng === 'number' && typeof term.radius === 'number') {
-      _sub.subscribe_geography(term.location);
-    }
+  this.subscribe = function(term) {
+    _sub.subscribe(term);
   };
 
-  this.unsubscribe = function (id) {
+  this.unsubscribe = function(id) {
     id = id || 'all';
     _sub.unsubscribe(id);
   }
@@ -142,13 +128,13 @@ function InstagramStream (server, opts) {
    * object-id and subscription-id information. This can determine which type of
    * subscription was sent, and what its purpose was.
    */
-  function route_traffic (body) {
-    for (var k = 0; k < body.length; k++) {
+  function route_traffic(body) {
+    for (var k = 0; k < body.length; k++)
       route_individual_media_response(body[k]);
-    }
   }
 
-  function route_individual_media_response (result) {
+  function route_individual_media_response(result) {
+      console.log(result)
     var sub_type = result.object;
     var sub_id = result.subscription_id;
     var obj_id = result.object_id;
@@ -160,27 +146,27 @@ function InstagramStream (server, opts) {
     }
 
     switch (sub_type) {
-    case 'user':
-      console.log('routing user-media traffic');
-      console.log('NOTE: this is *not* implemented');
-      _fetch.get_user();
-      break;
+        case 'user':
+          console.log('routing user-media traffic');
+          console.log('NOTE: this is *not* implemented');
+          _fetch.get_user();
+          break;
 
-    case 'tag':
-      _fetch.get_tag(obj_id);
-      break;
+        case 'tag':
+          _fetch.get_tag(obj_id);
+          break;
 
-    case 'location':
-      _fetch.get_location(obj_id);
-      break;
+        case 'location':
+          _fetch.get_location(obj_id);
+          break;
 
-    case 'geography':
-      _fetch.get_geography(obj_id);
-      break;
+        case 'geography':
+          _fetch.get_geography(obj_id);
+          break;
 
-    default:
-      console.log('bad media update');
-      return;
+        default:
+          console.log('bad media update');
+          return;
     }
   }
 }
