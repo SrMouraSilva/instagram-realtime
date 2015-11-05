@@ -14,14 +14,13 @@ let GeographySubscription = require('./subscription/GeographySubscription');
  * Helps with Instagram Subscriptions
  */
 class SubscriptionManager {
-    constructor(params) {
-        this.parent = params.parent;
-        this.server = params.server;
+    constructor(instagramStream, auth) {
+        this.instagramStream = instagramStream;
 
         this.client = {
-            'id'     : params.client_id,
-            'secret' : params.client_secret,
-            'callback_url' : params.callback_url,
+            'id'     : auth.client_id,
+            'secret' : auth.client_secret,
+            'callback_url' : auth.callback_url,
         };
 
         this.subscribers = [
@@ -53,9 +52,9 @@ class SubscriptionManager {
     //@private
     unsubscribe_handler(error, resp, body) {
         if (resp.statusCode === 200)
-            this.parent.emit('unsubscribe', resp, body);
+            this.instagramStream.emit('unsubscribe', resp, body);
         else
-            this.parent.emit('unsubscribe/error', error, resp, body);
+            this.instagramStream.emit('unsubscribe/error', error, resp, body);
     }
 
     subscribe(term) {
@@ -79,9 +78,9 @@ class SubscriptionManager {
     //@private
     subscribe_handler(error, resp, body) {
         if (resp.statusCode === 200)
-            this.parent.emit('subscribe', resp, body);
+            this.instagramStream.emit('subscribe', resp, body);
         else
-            this.parent.emit('subscribe/error', error, resp, body);
+            this.instagramStream.emit('subscribe/error', error, resp, body);
     }
 }
 

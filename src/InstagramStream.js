@@ -1,15 +1,12 @@
-// External dependencies
-var connect = require('connect');
-var events  = require('events');
-var util    = require('util');
-var url     = require('url');
-var bodyParser     = require('body-parser');
-// Internal dependencies
-var SubscriptionManager = require('./SubscriptionManager.js');
-var MediaFetcher        = require('./MediaFetcher.js');
+"use strict";
 
-// Inheritance
-util.inherits(InstagramStream, events.EventEmitter);
+// External dependencies
+const express = require('express');
+const bodyParser = require('body-parser');
+
+// Internal dependencies
+const SubscriptionManager = require('./SubscriptionManager.js');
+const MediaFetcher        = require('./MediaFetcher.js');
 
 /**
  * InstagramStream Object
@@ -17,162 +14,117 @@ util.inherits(InstagramStream, events.EventEmitter);
  * @param {!Server} server  a Node HTTP server or Express App()
  * @param {object}  opts    options object
  */
-function InstagramStream (server, opts) {
-  if (!(this instanceof InstagramStream)) {
-    return new InstagramStream(server, opts);
-  }
+class InstagramStream {
+    constructor(server, opts) {
+        // Shift over parameters, if there is no server in the first slot
+        if (typeof server === 'object' && typeof server.listen !== 'function') {
+            server  = null;
+            opts    = server;
+        }
 
-  // Call super constructor
-  events.EventEmitter.call(this);
+        opts = validadeOpts(opts);
+        this.auth = prepareAuth(opts);
 
-  // Shift over parameters, if there is no server in the first slot
-  if (typeof server === 'object' && typeof server.listen !== 'function') {
-    server  = null;
-    opts    = server;
-  }
+        this.subscription = new SubscriptionManager(this, this.auth);
+        this.fetcher = new MediaFetcher(this, this.auth);
 
-  opts = opts || {};
+        ~function() {
+            var app = express();
 
-  // Warn user about invalid options
-  if (!opts.client_id)
-    console.log('Invalid "client_id"'.yellow);
+            app.use(bodyParser.json());
 
-  if (!opts.client_secret)
-    console.log('Invalid "client_secret"'.yellow);
+            app.get('/callback', function(req, res) {
+                res.send(req.query['hub.challenge']);
+            });
 
-  if (!opts.url)
-    console.log('Invalid "url"'.yellow);
+            app.post('/callback', function(req, res) {
+                console.log(req.body);
+                route_traffic(req.body);
+            });
 
-  if (!opts.callback_path)
-    console.log('Invalid "callback_path"'.yellow);
+            app.listen(server);
 
-  // Create object
-  this.client_id      = opts.client_id;
-  this.client_secret  = opts.client_secret;
-  this.callback_url   = opts.url + '/' + opts.callback_path;
-  this.url            = opts.url;
-  this.callback_path  = opts.callback_path;
-
-  this.last = {};
-  this.last.response  = undefined;
-  this.last.body      = undefined;
-  this.last_body      = undefined;    // TODO: Remove this
-
-  // Defaults
-  this.callback_path = this.callback_path ? this.callback_path : 'callback';
-  var self = this;
-
-  var _sub = new SubscriptionManager({
-    parent  : this,
-    client_id     : this.client_id,
-    client_secret : this.client_secret,
-    callback_url  : this.callback_url
-  });
-
-  var _fetch = new MediaFetcher({
-    parent  : this,
-    client_id     : this.client_id,
-    client_secret : this.client_secret,
-    callback_url  : this.callback_url
-  });
-
-  // Route '/:callback' -> custom handlers
-  ~function() {
-    var listeners = server.listeners('request');
-
-    var chain = connect();
-
-    chain.use(bodyParser.urlencoded({ extended: true }));
-
-    chain.use(function (req, resp, next) {
-      var pathname = url.parse(req.url).pathname;
-
-      if (req.method === 'GET' && pathname === '/' + self.callback_path) {
-        var hub_challenge = url.parse(req.url, true).query['hub.challenge'];
-        resp.writeHead(200, { 'Content-Type': 'text/plain;charset=utf-8' });
-        resp.end(hub_challenge ? hub_challenge : '🍕');
-
-      } else if (req.method === 'POST' && pathname === '/' + self.callback_path) {
-          console.log("Instagram: POST");
-          console.log(req.body);
-        resp.writeHead(200, { 'Content-Type': 'text/plain;charset=utf-8' });
-        resp.end('🍕');
-        route_traffic(req.body, req);
-
-      } else
-        next();
-    });
-
-    chain.use(function(req, resp) {
-      for (var k = 0; k < listeners.length; k++) {
-        listeners[k].call(server, req, resp);
-      }
-    });
-
-    server.removeAllListeners('request');
-    server.on('request', chain);
-  }();
-
-  this.subscribe = function(term) {
-    _sub.subscribe(term);
-  };
-
-  this.unsubscribe = function(id) {
-    id = id || 'all';
-    _sub.unsubscribe(id);
-  }
-  /**
-   * Request a Media Search from Instagram Based on an HTTP-Request
-   * ~~~
-   * @param {!Request Body} body an HTTP-request from the InstagramAPI containing
-   * object-id and subscription-id information. This can determine which type of
-   * subscription was sent, and what its purpose was.
-   */
-  function route_traffic(body) {
-    for (var k = 0; k < body.length; k++)
-      route_individual_media_response(body[k]);
-  }
-
-  function route_individual_media_response(result) {
-      console.log(result)
-    var sub_type = result.object;
-    var sub_id = result.subscription_id;
-    var obj_id = result.object_id;
-
-    if (!(sub_id && obj_id)) {
-      console.log('bad result... this seems like an Instagram API problem');
-      console.log('sub_id = ' + sub_id);
-      console.log('obj_id = ' + obj_id);
+        }.bind(this)();
     }
 
-    switch (sub_type) {
-        case 'user':
-          console.log('routing user-media traffic');
-          console.log('NOTE: this is *not* implemented');
-          _fetch.get_user();
-          break;
-
-        case 'tag':
-          _fetch.get_tag(obj_id);
-          break;
-
-        case 'location':
-          _fetch.get_location(obj_id);
-          break;
-
-        case 'geography':
-          _fetch.get_geography(obj_id);
-          break;
-
-        default:
-          console.log('bad media update');
-          return;
+    subscribe(term) {
+        this.subscription.subscribe(term);
     }
-  }
+
+    unsubscribe(id) {
+        id = id || 'all';
+        this.subscription.unsubscribe(id);
+    }
+
+    emit(data) {
+        console.log("Data emmited");
+    }
+
+    on(event, callback) {
+        console.log("evento inscrito");
+    }
 }
 
-// LISTEN = CONSTRUCTOR
-InstagramStream.prototype.listen = InstagramStream;
+//@private
+function validadeOpts(opts) {
+    opts = opts || {};
+
+    if (!opts.client_id)
+      console.log('Invalid "client_id"'.yellow);
+
+    if (!opts.client_secret)
+      console.log('Invalid "client_secret"'.yellow);
+
+    if (!opts.url)
+      console.log('Invalid "url"'.yellow);
+
+    if (!opts.callback_path)
+      console.log('Invalid "callback_path"'.yellow);
+
+    return opts;
+}
+
+function prepareAuth(opts) {
+    opts.callback_path = opts.callback_path ? opts.callback_path : 'callback';
+
+    const auth = {
+        client_id     : opts.client_id,
+        client_secret : opts.client_secret,
+        url           : opts.url,
+        callback_path : opts.callback_path,
+        callback_url  : opts.url + '/' + opts.callback_path
+    };
+
+    return auth;
+}
+
+/**
+ * Request a Media Search from Instagram Based on an HTTP-Request
+ * ~~~
+ * @param {!Request Body} body an HTTP-request from the InstagramAPI containing
+ * object-id and subscription-id information. This can determine which type of
+ * subscription was sent, and what its purpose was.
+ */
+function route_traffic(body) {
+    console.log(body); // FIXME : Bodt wrong
+    for (let message of body)
+      route_individual_media_response(message);
+}
+
+function route_individual_media_response(result) {
+    const type = result.object;
+    const idSubject = result.subscription_id;
+    const idObject = result.object_id;
+
+    if (!(idSubject && idObject)) {
+        console.log('bad result... this seems like an Instagram API problem');
+        console.log('sub_id = ' + idSubject);
+        console.log('obj_id = ' + idObject);
+    }
+
+    const id = idObject !== undefined ? idObject : idSubject;
+    _fetch.fetch(type, id);
+}
 
 
 // Exports

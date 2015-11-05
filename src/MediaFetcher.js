@@ -1,73 +1,49 @@
-var request = require('request');
+"use strict";
 
-/**
- * MediaFetcher
- * Helps with pulling new media
- */
-function MediaFetcher (params) {
-  var self = this;
-  self.parent = params.parent;
-  self.server = params.server;
-  self.client_id      = params.client_id;
-  self.client_secret  = params.client_secret;
-  self.callback_url   = params.callback_url;
+const UserFetcher      = require("./fetcher/UserFetcher");
+const TagFetcher       = require("./fetcher/TagFetcher");
+const LocationFetcher  = require("./fetcher/LocationFetcher");
+const GeographyFetcher = require("./fetcher/GeographyFetcher");
 
-  // Request Media Handler
-  self.request_media_handler = function (error, resp, body) {
-    if (resp.statusCode === 200) {
-      self.parent.emit('new', resp, body);
-      self.parent.last.response = resp;
-      self.parent.last.body     = body;
-      self.parent.last_body     = body;
+class MediaFetcher {
+
+    constructor(instagramStream, auth) {
+        this.instagramStream = instagramStream
+        this.auth = auth;
+
+        this.request = require('request');
+        this.fetchers = [
+            new UserFetcher(this),
+            new TagFetcher(this),
+            new LocationFetcher(this),
+            new GeographyFetcher(this)
+        ];
     }
-    else {
-      self.parent.emit('new/error', resp, body);
+
+    fetch(type, id) {
+        for (let fetcher of this.fetchers)
+            if (fetcher.isForThis(type)) {
+                fetcher.call(id);
+                return;
+            }
+
+        console.log('bad media update');
     }
-  };
+
+    requestBy(dataType, value) {
+        const url = `https://api.instagram.com/v1/${dataType}/${value}/media/recent?client_id=${this.auth.client_id}`;
+
+        console.log(url);
+        this.request.get(url, (error, resp, body) => this.callback(error, resp, body));
+    }
+
+    //@private
+    callback(error, resp, body) {
+        if (resp.statusCode === 200)
+            this.instagramStream.emit('new', resp, body);
+        else
+            this.instagramStream.emit('new/error', resp, body);
+    }
 }
-
-/**
- * Get New Media Created by a User
- * Sends an
- */
-MediaFetcher.prototype.get_user = function (id) {
-  if (typeof id !== 'string') {
-    console.log('User search must have id\'s');
-  }
-
-  var url = 'https://api.instagram.com/v1';
-  url += '/users/' + id;
-  url += '/media/recent';
-  url += '?client_id='  + this.client_id;
-
-  request.get(url, this.request_media_handler);
-};
-
-MediaFetcher.prototype.get_tag = function (tag) {
-  var url = 'https://api.instagram.com/v1';
-  url += '/tags/' + tag;
-  url += '/media/recent';
-  url += '?client_id='  + this.client_id;
-
-  request.get(url, this.request_media_handler);
-};
-
-MediaFetcher.prototype.get_location = function (id) {
-  var url = 'https://api.instagram.com/v1';
-  url += '/locations/' + id;
-  url += '/media/recent';
-  url += '?client_id='  + this.client_id;
-
-  request.get(url, this.request_media_handler);
-};
-
-MediaFetcher.prototype.get_geography = function (id) {
-  var url = 'https://api.instagram.com/v1';
-  url += '/geographies/' + id;
-  url += '/media/recent';
-  url += '?client_id='  + this.client_id;
-
-  request.get(url, this.request_media_handler);
-};
 
 module.exports = MediaFetcher;
