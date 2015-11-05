@@ -1,13 +1,11 @@
 "use strict";
 
-let request = require('request');
-let connect = require('connect');
-let url = require('url');
+const request = require('request');
 
-let TagSubscription = require('./subscription/TagSubscription');
-let UserSubscription = require('./subscription/UserSubscription');
-let LocationSubscription = require('./subscription/UserSubscription');
-let GeographySubscription = require('./subscription/GeographySubscription');
+const TagSubscription = require('./subscription/TagSubscription');
+const UserSubscription = require('./subscription/UserSubscription');
+const LocationSubscription = require('./subscription/UserSubscription');
+const GeographySubscription = require('./subscription/GeographySubscription');
 
 /**
  * SubscriptionManager
@@ -41,7 +39,7 @@ class SubscriptionManager {
      */
     unsubscribe(id) {
         id = typeof id !== 'undefined' ? id : 'all';
-        var url = 'https://api.instagram.com/v1/subscriptions';
+        let url = 'https://api.instagram.com/v1/subscriptions';
         url += '?client_secret='  + this.client.secret;
         url += '&client_id='      + this.client.id;
         url += '&object='         + id;
