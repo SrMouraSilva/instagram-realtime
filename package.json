@@ -11,7 +11,6 @@
   "devDependencies": {
     "chai": "^1.10.0",
     "colors": "0.x.x",
-    "express": "^4.10.4",
     "mocha": "1.x.x",
     "nock": "^0.51.0",
     "socket.io": "0.9.x"
@@ -21,6 +20,7 @@
     "example-express": "node examples/express.js",
     "example-http": "node examples/http.js",
     "example-socket.io": "node examples/socket.io.js",
+    "test": "start .\\node_modules\\.bin\\mocha -R spec",
     "test": "./node_modules/.bin/mocha -R spec"
   },
   "engines": {

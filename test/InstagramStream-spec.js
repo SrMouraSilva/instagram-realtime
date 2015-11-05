@@ -1,5 +1,5 @@
 var InstagramStream = require('../src/InstagramStream.js');
-// var nockInstagramApi = require('../mock/nock-instagram-api.js');
+
 
 var expect = require('chai').expect;
 var nock   = require('nock');
@@ -19,12 +19,6 @@ nock('https://api.instagram.com')
   .post('/v1/subscriptions/')
   .reply(200, 'whatever');
 
-//
-//
-//
-//
-//
-
 describe('InstagramStream', function () {
 
   var server  = require('http').createServer(app).listen(process.env.PORT || 5000);
@@ -36,9 +30,20 @@ describe('InstagramStream', function () {
   };
 
   // Subscribe/Unsubscribe tests
+  describe('parameters invalid', function() {
+      it('should throwa an error', (done) => {
+          try {
+              var stream = new InstagramStream(server, {});
+          } catch (error) {
+              done();
+          }
+      });
+  });
+
+  // Subscribe/Unsubscribe tests
   describe('subscribe', function () {
 
-    var stream = InstagramStream( server, { });
+    var stream = new InstagramStream(server, opts);
 
     it('should trigger subscription success event', function (done) {
 
