@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/SrMouraSilva/instagram-realtime.svg)](https://travis-ci.org/SrMouraSilva/instagram-realtime)
 
-[![Dependencies Status](https://david-dm.org/SrMouraSilva/instagram-realtime.svg)](https://david-dm.org/SrMouraSilva/instagram-realtime) 
+[![Dependencies Status](https://david-dm.org/SrMouraSilva/instagram-realtime.svg)](https://david-dm.org/SrMouraSilva/instagram-realtime)
 
 Event-based, object-oriented Instagram API wrapper for NodeJS
 

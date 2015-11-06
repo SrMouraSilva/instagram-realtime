@@ -44,11 +44,11 @@ class SubscriptionManager {
         url += '&client_id='      + this.client.id;
         url += '&object='         + id;
 
-        request.del(url, this.unsubscribe_handler.bind(this));
+        request.del(url, this.unsubscribeHandler.bind(this));
     };
 
     //@private
-    unsubscribe_handler(error, resp, body) {
+    unsubscribeHandler(error, resp, body) {
         if (resp.statusCode === 200)
             this.instagramStream.emit('unsubscribe', resp, body);
         else
@@ -70,11 +70,11 @@ class SubscriptionManager {
         data.client_secret = this.client.secret;
         data.callback_url  = this.client.callback_url;
 
-        request.post(subscription.url, { form : data }, this.subscribe_handler.bind(this));
+        request.post(subscription.url, { form : data }, this.subscribeHandler.bind(this));
     }
 
     //@private
-    subscribe_handler(error, resp, body) {
+    subscribeHandler(error, resp, body) {
         if (resp.statusCode === 200)
             this.instagramStream.emit('subscribe', resp, body);
         else
