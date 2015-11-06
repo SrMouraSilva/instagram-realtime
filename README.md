@@ -1,5 +1,9 @@
 # instagram-realtime
 
+[![Build Status](https://travis-ci.org/SrMouraSilva/instagram-realtime.svg)](https://travis-ci.org/SrMouraSilva/instagram-realtime)
+
+[![Dependencies Status](https://david-dm.org/SrMouraSilva/instagram-realtime.svg)](https://david-dm.org/SrMouraSilva/instagram-realtime)
+
 Event-based, object-oriented Instagram API wrapper for NodeJS
 
 That is, program instagram-related things, using an event-driven framework.
@@ -16,7 +20,7 @@ var server  = require('http').createServer(app).listen(process.env.PORT || 5000)
 var InstagramStream = require('instagram-realtime');
 var secrets = require('./secrets.json');
 
-var stream = InstagramStream(
+var stream = new InstagramStream(
   server,
   {
     client_id     : secrets.client_id,

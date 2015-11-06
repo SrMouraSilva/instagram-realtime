@@ -125,7 +125,7 @@ class Trafic {
         }
 
         const id = idObject !== undefined ? idObject : idSubject;
-        this.stream.fetcher(type, id);
+        this.stream.fetcher.fetch(type, id);
     }
 }
 
