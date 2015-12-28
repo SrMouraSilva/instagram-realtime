@@ -8,12 +8,11 @@ class UserFetcher extends Fetcher {
     }
 
     isForThis(type) {
-        console.log('routing user-media traffic');
-        console.log('NOTE: this is *not* implemented');
         return type === 'user';
     }
 
     call(id) {
+        console.log('NOTE: UserFetcher is *not* implemented');
         this.mediaFetcher.requestBy("users", id);
     }
 }
